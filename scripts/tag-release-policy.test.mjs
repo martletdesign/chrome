@@ -26,3 +26,15 @@ test('tag artifact and release jobs remain disabled and do not submit to stores'
   assert.match(workflow,/gh release create/);
   assert.doesNotMatch(workflow,/npm publish|webstore|addons\.mozilla\.org/);
 });
+
+
+test('Chrome prereleases preserve their display version with a valid numeric manifest version',async()=>{
+  const {chromeTheme}=await import('./app-ports.mjs');
+  const source=JSON.parse(await readFile('source.json','utf8'));
+  const manifest=chromeTheme(source.themes.light,'1.2.3-beta.1');
+  assert.equal(manifest.version,'1.2.3');
+  assert.equal(manifest.version_name,'1.2.3-beta.1');
+  const pkg={name:`${source.family}-chrome-source`,version:'65536.1.0',private:true};
+  assert.throws(()=>validateSource({repository:`${source.family}design/chrome`,tag:'v65536.1.0',source:{...source,version:pkg.version},pkg}));
+  assert.throws(()=>chromeTheme(source.themes.light,'65536.1.0'));
+});

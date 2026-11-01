@@ -53,7 +53,9 @@ export function emacsTheme(theme,version) {
 }
 export function chromeTheme(theme,version) {
  const t=theme.tokens, colors={frame:t.panel2,frame_inactive:t.panel,toolbar:t.bg,toolbar_text:t.text,toolbar_button_icon:t.accent,tab_text:t.text,tab_background_text:t.muted,background_tab:t.panel2,bookmark_text:t.text,button_background:t.panel,ntp_background:t.bg,ntp_text:t.text,ntp_link:t.link,ntp_header:t.line,omnibox_background:t.panel,omnibox_text:t.text};
- return {manifest_version:3,name:theme.name,version,description:`${theme.name}: a quiet color theme for your browser.`,homepage_url:`https://${theme.id.split('-')[0]}theme.dev/`,theme:{colors:Object.fromEntries(Object.entries(colors).map(([k,v])=>[k,rgb(v)])),properties:{ntp_logo_alternate:theme.mode==='dark'?1:0}}};
+ const [numeric,prerelease]=version.split('-',2);
+ if(!/^\d+\.\d+\.\d+$/.test(numeric)||numeric.split('.').some(x=>Number(x)>65535)) throw Error('Chrome version components must be integers in the range 0..65535');
+ return {manifest_version:3,name:theme.name,version:numeric,...(prerelease?{version_name:version}:{}),description:`${theme.name}: a quiet color theme for your browser.`,homepage_url:`https://${theme.id.split('-')[0]}theme.dev/`,theme:{colors:Object.fromEntries(Object.entries(colors).map(([k,v])=>[k,rgb(v)])),properties:{ntp_logo_alternate:theme.mode==='dark'?1:0}}};
 }
 export function firefoxColors(theme) {
  const t=theme.tokens;
