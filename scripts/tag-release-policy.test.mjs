@@ -59,7 +59,7 @@ test('release shell rejects existing or unavailable releases and verifies exact 
     await Promise.all(['bin','dist','remote'].map(x=>mkdir(join(cwd,x))));
     await writeFile(join(cwd,'dist','sample.zip'),'expected bytes');
     assert.equal(run('sha256sum dist/sample.zip > dist/SHA256SUMS',{}).status,0);
-    await writeFile(join(cwd,'bin','curl'),'#!/bin/sh\nprintf "%s" "$FAKE_STATUS"\n',{mode:0o755});
+    await writeFile(join(cwd,'bin','node'),'#!/bin/sh\n[ "$1" = scripts/github-release-absent.mjs ] && [ "$FAKE_STATUS" = 404 ]\n',{mode:0o755});
     await writeFile(join(cwd,'bin','gh'),`#!/bin/bash\nset -eu\nif [ "$2" = create ]; then printf '%s\\n' "$@" > "$CAPTURE"; cp dist/* "$REMOTE"/; elif [ "$2" = download ]; then cp "$REMOTE"/* release-check/; else exit 9; fi\n`,{mode:0o755});
     const env={PATH:`${join(cwd,'bin')}:${process.env.PATH}`,RELEASE_TAG:'v1.2.3-beta.1',GITHUB_REPOSITORY:'martletdesign/chrome',GH_TOKEN:'local-placeholder',FAKE_STATUS:'404',CAPTURE:join(cwd,'capture'),REMOTE:join(cwd,'remote')};
     assert.equal(run(create,env).status,0);assert.match(await read(env.CAPTURE,'utf8'),/--prerelease/);
@@ -68,4 +68,16 @@ test('release shell rejects existing or unavailable releases and verifies exact 
     assert.notEqual(run(verify,env).status,0,'modified release artifact must fail');
     for(const status of ['200','403','500'])assert.notEqual(run(create,{...env,FAKE_STATUS:status}).status,0,`HTTP ${status} must fail closed`);
   }finally{await rm(cwd,{recursive:true,force:true});}
+});
+
+
+test('Chrome rejects invalid numeric and prerelease identities before packaging',async()=>{
+  const {chromeTheme}=await import('./app-ports.mjs');
+  const source=JSON.parse(await readFile('source.json','utf8'));
+  for(const version of ['0.0.0','0.0.0-rc.1','01.2.3','65536.0.0','1.2.3-','1.2.3-beta.01','1.2.3+build.1']){
+    assert.throws(()=>chromeTheme(source.themes.light,version),version);
+    assert.throws(()=>validateSource({repository:`${source.family}design/chrome`,tag:`v${version}`,source:{...source,version},pkg:{name:`${source.family}-chrome-source`,private:true,version}}),version);
+  }
+  assert.equal(chromeTheme(source.themes.light,'0.0.1-alpha-beta.1').version_name,'0.0.1-alpha-beta.1');
+  assert.equal(chromeTheme(source.themes.light,'65535.65535.65535').version,'65535.65535.65535');
 });
