@@ -53,7 +53,8 @@ if(kind==='chrome'||kind==='firefox'){
   for(const file of files){
    const m=JSON.parse(await readFile(file,'utf8'));
    for(const key of ['permissions','host_permissions','content_scripts','background','chrome_url_overrides','externally_connectable'])assert.equal(m[key],undefined,key);
-   assert.equal(m.version,source.version);
+   assert.equal(m.version,kind==='chrome'?source.version.split('-')[0]:source.version);
+   if(kind==='chrome')assert.equal(m.version_name,source.version.includes('-')?source.version:undefined);
    if(kind==='chrome')for(const v of Object.values(m.theme.colors))assert.ok(Array.isArray(v)&&v.length===3&&v.every(n=>Number.isInteger(n)&&n>=0&&n<=255));
    else{assert.equal(m.theme.colors.toolbar,themes.light.tokens.bg);assert.equal(m.dark_theme.colors.toolbar,themes.dark.tokens.bg);assert.deepEqual(m.browser_specific_settings.gecko.data_collection_permissions.required,['none']);}
   }
