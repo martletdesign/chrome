@@ -17,3 +17,4 @@ jobs:
         with:
           name: martlet-chrome
           path: dist/
+          retention-days: 7
