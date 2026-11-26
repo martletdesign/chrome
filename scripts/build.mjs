@@ -28,7 +28,15 @@ if(kind==='emacs'){
  for(const t of Object.values(themes)) outputs.set(`${t.id}-theme.el`,emacsTheme(t,version));
  outputs.set(`${family}-themes.el`,`;;; ${family}-themes.el --- ${label} Light and Dark themes -*- lexical-binding: t; -*-\n;; Copyright (C) 2026 James P. Howard, II\n;; Version: ${version}\n;; Package-Requires: ((emacs "27.1"))\n;; URL: https://github.com/${family}theme/emacs\n;; Keywords: faces, theme\n;; SPDX-License-Identifier: MIT\n;;; Commentary:\n;; Load this package to register the directory; select a variant with load-theme.\n;;; Code:\n;;;###autoload\n(when load-file-name\n  (add-to-list 'custom-theme-load-path (file-name-directory load-file-name)))\n(provide '${family}-themes)\n;;; ${family}-themes.el ends here\n`);
 }
-if(kind==='chrome') for(const t of Object.values(themes)) outputs.set(`themes/${t.mode}/manifest.json`,json(chromeTheme(t,version)));
+if(kind==='chrome'){
+ const icon=await readFile('assets/chrome-store-icon.png');
+ for(const t of Object.values(themes)){
+  const manifest=chromeTheme(t,version);
+  manifest.icons={128:'icon.png'};
+  outputs.set(`themes/${t.mode}/manifest.json`,json(manifest));
+  outputs.set(`themes/${t.mode}/icon.png`,icon);
+ }
+}
 if(kind==='firefox') outputs.set('theme/manifest.json',json(firefoxTheme(themes,family,version)));
 if(!['npm','vim','emacs','chrome','firefox'].includes(kind)) throw new Error('Unknown port kind');
 for(const [path,body] of outputs){await mkdir(dirname(path),{recursive:true});await writeFile(path,body);}
@@ -48,7 +56,7 @@ if(kind!=='npm'){
  await mkdir('dist',{recursive:true});
  const license=await readFile('LICENSE','utf8');
  if(kind==='chrome'){
-  for(const mode of ['light','dark']) await writeFile(`dist/${family}-${mode}-chrome.zip`,zip([['manifest.json',outputs.get(`themes/${mode}/manifest.json`)],['LICENSE',license]]));
+  for(const mode of ['light','dark']) await writeFile(`dist/${family}-${mode}-chrome.zip`,zip([['manifest.json',outputs.get(`themes/${mode}/manifest.json`)],['icon.png',outputs.get(`themes/${mode}/icon.png`)],['LICENSE',license]]));
  }else if(kind==='firefox') await writeFile(`dist/${family}-firefox.zip`,zip([['manifest.json',outputs.get('theme/manifest.json')],['LICENSE',license]]));
  else await writeFile(`dist/${family}-${kind}.zip`,zip([...outputs.entries(),['LICENSE',license],['README.md',await readFile('README.md','utf8')]]));
 }

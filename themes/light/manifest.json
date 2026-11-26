@@ -90,5 +90,8 @@
     "properties": {
       "ntp_logo_alternate": 0
     }
+  },
+  "icons": {
+    "128": "icon.png"
   }
 }

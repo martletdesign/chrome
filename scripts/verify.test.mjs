@@ -54,7 +54,14 @@ if(kind==='chrome'||kind==='firefox'){
    const m=JSON.parse(await readFile(file,'utf8'));
    for(const key of ['permissions','host_permissions','content_scripts','background','chrome_url_overrides','externally_connectable'])assert.equal(m[key],undefined,key);
    assert.equal(m.version,source.version);
-   if(kind==='chrome')for(const v of Object.values(m.theme.colors))assert.ok(Array.isArray(v)&&v.length===3&&v.every(n=>Number.isInteger(n)&&n>=0&&n<=255));
+   if(kind==='chrome'){
+    for(const v of Object.values(m.theme.colors))assert.ok(Array.isArray(v)&&v.length===3&&v.every(n=>Number.isInteger(n)&&n>=0&&n<=255));
+    assert.deepEqual(m.icons,{128:'icon.png'});
+    const icon=await readFile(resolve(file,'..',m.icons[128]));
+    assert.equal(icon.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+    assert.equal(icon.readUInt32BE(16),128);
+    assert.equal(icon.readUInt32BE(20),128);
+   }
    else{assert.equal(m.theme.colors.toolbar,themes.light.tokens.bg);assert.equal(m.dark_theme.colors.toolbar,themes.dark.tokens.bg);assert.deepEqual(m.browser_specific_settings.gecko.data_collection_permissions.required,['none']);}
   }
  });
